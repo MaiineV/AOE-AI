@@ -11,15 +11,15 @@ TagManager:
   - 
   - Water
   - UI
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
+  - BlueTeam
+  - RedTeam
+  - Floor
+  - Obstacle
+  - Wall
+  - Node
+  - HidingSpot
+  - BlueKing
+  - RedKing
   - 
   - 
   - 

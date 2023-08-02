@@ -6,26 +6,23 @@ using Debug = UnityEngine.Debug;
 
 public class MPathfinding : MonoBehaviour
 {
-    public static MPathfinding _instance;
+    public static MPathfinding instance;
     private Path _actualPath;
     private MNode _origenNode;
     private MNode _targetNode;
-    private MNode _actualnode;
+    private MNode _actualNode;
     public float searchingRange;
     
     private HashSet<MNode> _closeNodes = new HashSet<MNode>();
     private PriorityQueue<MNode> _openNodes = new PriorityQueue<MNode>();
 
-    public List<MNode> checker = new List<MNode>();
-
     private void Awake()
     {
-        _instance = this;
+        instance = this;
     }
 
     public Path GetPath(Vector3 origen, Vector3 target)
     {
-        checker = new List<MNode>();
         
         _actualPath = new Path();
         _closeNodes = new HashSet<MNode>();
@@ -34,7 +31,7 @@ public class MPathfinding : MonoBehaviour
         _origenNode = GetClosestNode(origen);
         _targetNode = GetClosestNode(target);
 
-        _actualnode = _origenNode;
+        _actualNode = _origenNode;
 
         AStar();
 
@@ -43,30 +40,30 @@ public class MPathfinding : MonoBehaviour
 
     private void AStar()
     {
-        if (_actualnode == null)
+        if (_actualNode == null)
         {
             Debug.Log("ACA DEBERIA CRASHEAR!");
             return;
         }
 
-        _closeNodes.Add(_actualnode);
-        _actualnode.nodeColor = Color.green;
+        _closeNodes.Add(_actualNode);
+        _actualNode.nodeColor = Color.green;
 
         var watchdog = 10000;
         var checkingNodes = new Queue<MNode>();
 
-        while (_actualnode != _targetNode && watchdog > 0)
+        while (_actualNode != _targetNode && watchdog > 0)
         {
             watchdog--;
 
-            for (var i = 0; i < _actualnode.NeighboursCount(); i++)
+            for (var i = 0; i < _actualNode.NeighboursCount(); i++)
             {
-                var node = _actualnode.GetNeighbor(i);
+                var node = _actualNode.GetNeighbor(i);
                 node.nodeColor = Color.magenta;
-                if (_closeNodes.Contains(node)) continue;
+                if (_closeNodes.Contains(node) || !OnSight(_actualNode.transform.position, node.transform.position)) continue;
 
-                node.previousNode = _actualnode;
-                node.SetWeight(_actualnode.GetWeight() + 1 +
+                node.previousNode = _actualNode;
+                node.SetWeight(_actualNode.GetWeight() + 1 +
                                Vector3.Distance(node.transform.position, _targetNode.transform.position));
 
                 _openNodes.Enqueue(node);
@@ -86,15 +83,15 @@ public class MPathfinding : MonoBehaviour
                         cheaperNode = actualNode;
                 }
 
-                _actualnode = cheaperNode;
+                _actualNode = cheaperNode;
             }
             else
             {
-                _actualnode = _openNodes.Dequeue();
+                _actualNode = _openNodes.Dequeue();
             }
 
 
-            _closeNodes.Add(_actualnode);
+            _closeNodes.Add(_actualNode);
         }
 
         ThetaStar();
@@ -103,26 +100,26 @@ public class MPathfinding : MonoBehaviour
     private void ThetaStar()
     {
         var stack = new Stack();
-        _actualnode = _targetNode;
-        stack.Push(_actualnode);
-        var previousNode = _actualnode.previousNode;
+        _actualNode = _targetNode;
+        stack.Push(_actualNode);
+        var previousNode = _actualNode.previousNode;
 
         if (previousNode == null) Debug.Log("no existe");
         var watchdog = 10000;
-        while (_actualnode != _origenNode && watchdog > 0)
+        while (_actualNode != _origenNode && watchdog > 0)
         {
             watchdog--;
 
-            if (previousNode.previousNode && OnSight(_actualnode.transform.position,
+            if (previousNode.previousNode && OnSight(_actualNode.transform.position,
                     previousNode.previousNode.transform.position))
             {
                 previousNode = previousNode.previousNode;
             }
             else
             {
-                _actualnode.previousNode = previousNode;
-                _actualnode = previousNode;
-                stack.Push(_actualnode);
+                _actualNode.previousNode = previousNode;
+                _actualNode = previousNode;
+                stack.Push(_actualNode);
             }
         }
 
@@ -132,12 +129,11 @@ public class MPathfinding : MonoBehaviour
             watchdog--;
 
             var nextNode = stack.Pop() as MNode;
-            checker.Add(nextNode);
             _actualPath.AddNode(nextNode);
         }
     }
 
-    public MNode GetClosestNode(Vector3 t, bool isForAssistant = false)
+    private MNode GetClosestNode(Vector3 t, bool isForAssistant = false)
     {
         var actualSearchingRange = searchingRange;
         var closestNodes = Physics.OverlapSphere(t, actualSearchingRange, LayerManager.LM_NODE)
@@ -184,7 +180,7 @@ public class MPathfinding : MonoBehaviour
         return mNode;
     }
 
-    private bool OnSight(Vector3 from, Vector3 to)
+    public static bool OnSight(Vector3 from, Vector3 to)
     {
         var dir = to - from;
         var ray = new Ray(from, dir);
